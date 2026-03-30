@@ -10,13 +10,33 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 authors = [{ name = "maccalsa" }]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development",
+]
 dependencies = ["typer>=0.15", "docker>=7.0", "rich>=13.0"]
+
+[project.urls]
+Homepage = "https://github.com/maccalsa/labctl"
+Documentation = "https://maccalsa.github.io/labctl"
+Repository = "https://github.com/maccalsa/labctl"
+Issues = "https://github.com/maccalsa/labctl/issues"
 
 [project.scripts]
 labctl = "labctl.cli:app"
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "pytest-cov>=6.0", "ruff>=0.11"]
+docs = ["mkdocs-material>=9.5"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/labctl"]

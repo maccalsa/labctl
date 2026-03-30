@@ -1,10 +1,16 @@
 # labctl
 
-Local dev labs without the nonsense.
+[![CI](https://github.com/maccalsa/labctl/actions/workflows/ci.yml/badge.svg)](https://github.com/maccalsa/labctl/actions/workflows/ci.yml)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-`labctl` creates small, connected, machine-like development environments
+**Local dev labs without the nonsense.**
+
+labctl creates small, connected, machine-like development environments
 using containers — without needing Docker Compose, networking knowledge,
 or complex configuration.
+
+**[Documentation](https://maccalsa.github.io/labctl)**
 
 ## Requirements
 
@@ -13,24 +19,57 @@ or complex configuration.
 
 ## Install
 
+### Recommended: pipx
+
 ```bash
-pip install -e ".[dev]"
+pipx install git+https://github.com/maccalsa/labctl.git
+```
+
+### Alternative: pip
+
+```bash
+pip install git+https://github.com/maccalsa/labctl.git
+```
+
+### Verify
+
+```bash
+labctl --version
 ```
 
 ## Usage
 
 ```bash
-labctl --help
-labctl create api-dev --template node
+# Create a dev machine
+labctl create my-dev
+
+# See what's running
 labctl list
-labctl shell api-dev
-labctl destroy api-dev
+
+# Jump into a shell
+labctl shell my-dev
+
+# Tear it down
+labctl destroy my-dev
+```
+
+Machines land on a shared network and resolve each other by name:
+
+```bash
+labctl create api
+labctl create db --template postgres
+
+labctl shell api
+ping db    # just works
 ```
 
 ## Development
 
 ```bash
-make dev       # install with dev deps
+git clone https://github.com/maccalsa/labctl.git
+cd labctl
+pip install -e ".[dev]"
+
 make test      # run tests
 make lint      # check linting
 make format    # auto-format
@@ -40,3 +79,7 @@ make format    # auto-format
 
 labctl is a local development tool. It assumes a trusted local environment.
 Do not expose labctl-managed machines to untrusted networks.
+
+## License
+
+MIT
