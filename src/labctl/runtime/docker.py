@@ -74,6 +74,17 @@ class DockerRuntime:
         )
         return container.id
 
+    def connect_network(
+        self,
+        container_id: str,
+        network: str,
+        *,
+        aliases: list[str] | None = None,
+    ) -> None:
+        """Connect a container to a network with optional DNS aliases."""
+        net = self._client.networks.get(network)
+        net.connect(container_id, aliases=aliases or [])
+
     def start(self, container_id: str) -> None:
         container = self._get_container(container_id)
         container.start()

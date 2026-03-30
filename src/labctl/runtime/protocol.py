@@ -49,6 +49,16 @@ class ContainerRuntime(Protocol):
         self, container_id: str, *, follow: bool = False, tail: int = 100
     ) -> str: ...
 
+    def connect_network(
+        self,
+        container_id: str,
+        network: str,
+        *,
+        aliases: list[str] | None = None,
+    ) -> None:
+        """Connect a container to a network with optional DNS aliases."""
+        ...
+
     def create_network(self, name: str) -> str:
         """Create a network and return its ID. No-op if it already exists."""
         ...

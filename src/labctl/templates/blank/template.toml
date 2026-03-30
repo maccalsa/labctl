@@ -1,0 +1,10 @@
+[template]
+name = "blank"
+description = "Minimal machine with bash, curl, and git."
+
+# Container ports to publish to dynamic host ports.
+ports = []
+
+# Named volumes: each entry is {container_path = "...", suffix = "data"}.
+# labctl creates volumes named "labctl-<machine>-<suffix>".
+volumes = []

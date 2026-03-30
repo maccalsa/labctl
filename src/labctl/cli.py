@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import typer
+from rich.console import Console
 
 from labctl import __version__
+from labctl.errors import LabctlError
 
 app = typer.Typer(
     name="labctl",
@@ -12,6 +14,16 @@ app = typer.Typer(
     no_args_is_help=True,
     rich_markup_mode="rich",
 )
+
+console = Console()
+err_console = Console(stderr=True)
+
+
+def _get_runtime():
+    """Lazy-import and construct the DockerRuntime."""
+    from labctl.runtime.docker import DockerRuntime
+
+    return DockerRuntime()
 
 
 def _version_callback(value: bool) -> None:
@@ -42,8 +54,21 @@ def create(
     ),
 ) -> None:
     """Create a new dev machine."""
-    typer.echo(f"Creating machine '{name}' from template '{template}'...")
-    raise typer.Exit(code=1)  # stub — not implemented
+    from labctl.machine import create_machine
+
+    try:
+        runtime = _get_runtime()
+        with console.status(
+            f"Creating machine [bold]{name}[/bold] "
+            f"from template [bold]{template}[/bold]..."
+        ):
+            info = create_machine(name, template, runtime)
+        console.print(
+            f"[green]✓[/green] Machine [bold]{info.name}[/bold] is running."
+        )
+    except LabctlError as exc:
+        err_console.print(f"[red]error:[/red] {exc}")
+        raise typer.Exit(code=1) from None
 
 
 @app.command("list")
