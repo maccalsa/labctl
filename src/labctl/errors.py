@@ -30,3 +30,14 @@ class MachineExistsError(LabctlError):
     def __init__(self, name: str) -> None:
         super().__init__(f"Machine '{name}' already exists.")
         self.name = name
+
+
+class MachineNotRunningError(LabctlError):
+    """Raised when an operation requires a running machine."""
+
+    def __init__(self, name: str) -> None:
+        super().__init__(
+            f"Machine '{name}' is not running. "
+            f"Start it with: labctl start {name}"
+        )
+        self.name = name

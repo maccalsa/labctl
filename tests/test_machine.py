@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from labctl.errors import MachineNotFoundError
+from labctl.errors import MachineNotFoundError, MachineNotRunningError
 from labctl.machine import (
     CONTAINER_PREFIX,
     LABEL_MACHINE,
@@ -16,6 +16,7 @@ from labctl.machine import (
     LABEL_TEMPLATE,
     _container_name,
     _container_to_machine_info,
+    _detect_shell,
     _extract_volume_names,
     _format_port_mappings,
     _make_labels,
@@ -23,6 +24,7 @@ from labctl.machine import (
     _make_volumes,
     destroy_machine,
     list_machines,
+    shell_machine,
 )
 from labctl.template import VolumeSpec
 
@@ -285,3 +287,80 @@ class TestDestroyMachine:
 
         with pytest.raises(MachineNotFoundError):
             destroy_machine("nope", runtime)
+
+
+# -- Phase 4: shell -------------------------------------------------------
+
+def _running_container(name="foo"):
+    return {
+        "id": "abc123",
+        "name": f"labctl-{name}",
+        "status": "running",
+        "labels": {LABEL_MANAGED: "true", LABEL_MACHINE: name},
+        "ports": {},
+    }
+
+
+def _stopped_container(name="foo"):
+    return {
+        "id": "abc123",
+        "name": f"labctl-{name}",
+        "status": "exited",
+        "labels": {LABEL_MANAGED: "true", LABEL_MACHINE: name},
+        "ports": {},
+    }
+
+
+class TestDetectShell:
+    def test_returns_bash_when_available(self):
+        runtime = MagicMock()
+        runtime.exec_run.return_value = (0, "")
+        assert _detect_shell("abc123", runtime) == "/bin/bash"
+
+    def test_falls_back_to_sh(self):
+        runtime = MagicMock()
+        runtime.exec_run.return_value = (1, "")
+        assert _detect_shell("abc123", runtime) == "/bin/sh"
+
+
+class TestShellMachine:
+    def test_calls_exec_interactive_with_bash(self):
+        runtime = MagicMock()
+        runtime.list_containers.return_value = [_running_container()]
+        runtime.exec_run.return_value = (0, "")
+        runtime.exec_interactive.return_value = 0
+
+        exit_code = shell_machine("foo", runtime)
+
+        assert exit_code == 0
+        runtime.exec_interactive.assert_called_once_with(
+            "abc123", "/bin/bash"
+        )
+
+    def test_falls_back_to_sh(self):
+        runtime = MagicMock()
+        runtime.list_containers.return_value = [_running_container()]
+        runtime.exec_run.return_value = (1, "")
+        runtime.exec_interactive.return_value = 0
+
+        shell_machine("foo", runtime)
+
+        runtime.exec_interactive.assert_called_once_with(
+            "abc123", "/bin/sh"
+        )
+
+    def test_raises_on_nonexistent_machine(self):
+        runtime = MagicMock()
+        runtime.list_containers.return_value = []
+
+        with pytest.raises(MachineNotFoundError):
+            shell_machine("nope", runtime)
+
+    def test_raises_on_stopped_machine(self):
+        runtime = MagicMock()
+        runtime.list_containers.return_value = [_stopped_container()]
+
+        with pytest.raises(MachineNotRunningError) as exc_info:
+            shell_machine("foo", runtime)
+
+        assert "labctl start foo" in str(exc_info.value)

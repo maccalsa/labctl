@@ -145,5 +145,12 @@ def shell(
     name: str = typer.Argument(help="Machine to open a shell in."),
 ) -> None:
     """Open an interactive shell in a dev machine."""
-    typer.echo(f"Opening shell in '{name}'...")
-    raise typer.Exit(code=1)
+    from labctl.machine import shell_machine
+
+    try:
+        runtime = _get_runtime()
+        exit_code = shell_machine(name, runtime)
+        raise typer.Exit(code=exit_code)
+    except LabctlError as exc:
+        err_console.print(f"[red]error:[/red] {exc}")
+        raise typer.Exit(code=1) from None

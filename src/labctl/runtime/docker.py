@@ -121,6 +121,20 @@ class DockerRuntime:
             stderr=sys.stderr,
         )
 
+    def exec_run(
+        self, container_id: str, command: str | list[str]
+    ) -> tuple[int, str]:
+        """Run a command non-interactively. Returns (exit_code, output)."""
+        container = self._get_container(container_id)
+        result = container.exec_run(command)
+        exit_code = result.exit_code
+        output = (
+            result.output.decode("utf-8", errors="replace")
+            if isinstance(result.output, bytes)
+            else str(result.output)
+        )
+        return exit_code, output
+
     def inspect(self, container_id: str) -> dict[str, Any]:
         container = self._get_container(container_id)
         return container.attrs  # type: ignore[return-value]

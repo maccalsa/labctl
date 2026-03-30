@@ -43,6 +43,12 @@ class ContainerRuntime(Protocol):
         """Attach an interactive exec session. Returns exit code."""
         ...
 
+    def exec_run(
+        self, container_id: str, command: str | list[str]
+    ) -> tuple[int, str]:
+        """Run a command non-interactively. Returns (exit_code, output)."""
+        ...
+
     def inspect(self, container_id: str) -> dict[str, Any]: ...
 
     def logs(

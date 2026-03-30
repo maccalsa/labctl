@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
-from labctl.errors import MachineNotFoundError
+from labctl.errors import MachineNotFoundError, MachineNotRunningError
 from labctl.runtime.docker import LABCTL_NETWORK, DockerRuntime
 from labctl.template import Template, VolumeSpec, build_image, load_template
 
@@ -171,6 +171,27 @@ def _find_machine(name: str, runtime: DockerRuntime) -> dict[str, Any]:
         if c["name"] == container_name:
             return c
     raise MachineNotFoundError(name)
+
+
+def _detect_shell(container_id: str, runtime: DockerRuntime) -> str:
+    """Return the best available shell in the container."""
+    exit_code, _ = runtime.exec_run(
+        container_id, ["test", "-x", "/bin/bash"]
+    )
+    if exit_code == 0:
+        return "/bin/bash"
+    return "/bin/sh"
+
+
+def shell_machine(name: str, runtime: DockerRuntime) -> int:
+    """Open an interactive shell in a running machine. Returns exit code."""
+    container = _find_machine(name, runtime)
+    if container["status"] != "running":
+        raise MachineNotRunningError(name)
+
+    cid = container["id"]
+    shell_cmd = _detect_shell(cid, runtime)
+    return runtime.exec_interactive(cid, shell_cmd)
 
 
 def destroy_machine(
