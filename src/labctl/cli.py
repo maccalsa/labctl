@@ -72,19 +72,72 @@ def create(
 
 
 @app.command("list")
-def list_machines() -> None:
+def list_cmd() -> None:
     """List all dev machines."""
-    typer.echo("Listing machines...")
-    raise typer.Exit(code=1)
+    from rich.table import Table
+
+    from labctl.machine import _format_port_mappings, list_machines
+
+    try:
+        runtime = _get_runtime()
+        machines = list_machines(runtime)
+    except LabctlError as exc:
+        err_console.print(f"[red]error:[/red] {exc}")
+        raise typer.Exit(code=1) from None
+
+    if not machines:
+        console.print("[dim]No machines found.[/dim]")
+        return
+
+    table = Table(title="Machines")
+    table.add_column("Name", style="bold")
+    table.add_column("Template")
+    table.add_column("Status")
+    table.add_column("Ports")
+
+    for m in machines:
+        status_style = "green" if m.status == "running" else "yellow"
+        table.add_row(
+            m.name,
+            m.template,
+            f"[{status_style}]{m.status}[/{status_style}]",
+            _format_port_mappings(m.ports),
+        )
+
+    console.print(table)
 
 
 @app.command()
 def destroy(
     name: str = typer.Argument(help="Machine to destroy."),
+    volumes: bool = typer.Option(
+        False, "--volumes", help="Also delete named volumes."
+    ),
+    force: bool = typer.Option(
+        False, "--force", "-f", help="Skip confirmation."
+    ),
 ) -> None:
     """Destroy a dev machine."""
-    typer.echo(f"Destroying machine '{name}'...")
-    raise typer.Exit(code=1)
+    from labctl.machine import destroy_machine
+
+    try:
+        runtime = _get_runtime()
+        vol_names = destroy_machine(
+            name, runtime, remove_volumes=volumes, force=True,
+        )
+    except LabctlError as exc:
+        err_console.print(f"[red]error:[/red] {exc}")
+        raise typer.Exit(code=1) from None
+
+    console.print(
+        f"[green]✓[/green] Machine [bold]{name}[/bold] destroyed."
+    )
+    if vol_names and not volumes:
+        console.print(
+            f"[yellow]⚠[/yellow]  Volumes still exist: "
+            f"{', '.join(vol_names)}. "
+            f"Use [bold]--volumes[/bold] to delete them too."
+        )
 
 
 @app.command()

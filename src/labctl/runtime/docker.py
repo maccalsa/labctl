@@ -136,6 +136,17 @@ class DockerRuntime:
             chunk.decode("utf-8", errors="replace") for chunk in output
         )
 
+    # -- volumes -----------------------------------------------------------
+
+    def remove_volumes(self, names: list[str]) -> None:
+        """Remove named Docker volumes by name. Skips any that don't exist."""
+        for vol_name in names:
+            try:
+                vol = self._client.volumes.get(vol_name)
+                vol.remove(force=True)
+            except NotFound:
+                pass
+
     # -- helpers -----------------------------------------------------------
 
     def ensure_network(self) -> str:
